@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "my-work-hub-client-side-solution",
+    "id": "215e9cc1-ecc8-40a0-91ae-3a096798e66d",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.22.2"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "my-work-hub description"
+      },
+      "longDescription": {
+        "default": "my-work-hub description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "my-work-hub Feature",
+        "description": "The feature that activates elements of the my-work-hub solution.",
+        "id": "46efabda-ac29-4de3-8522-3b5d7a7b0181",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/my-work-hub.sppkg"
+  }
+}

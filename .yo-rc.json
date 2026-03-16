@@ -1,0 +1,19 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "useGulp": true,
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "22.14.0",
+    "sdksVersions": {},
+    "version": "1.22.2",
+    "libraryName": "my-work-hub",
+    "libraryId": "215e9cc1-ecc8-40a0-91ae-3a096798e66d",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "my-work-hub",
+    "solutionShortDescription": "my-work-hub description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}

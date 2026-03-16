@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "my-work-hub-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/myWorkHub/MyWorkHubWebPart.js",
+          "manifest": "./src/webparts/myWorkHub/MyWorkHubWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "MyWorkHubWebPartStrings": "lib/webparts/myWorkHub/loc/{locale}.js"
+  }
+}
