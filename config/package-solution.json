@@ -32,6 +32,19 @@
         "id": "46efabda-ac29-4de3-8522-3b5d7a7b0181",
         "version": "1.0.0.0"
       }
+    ],
+    "webApiPermissionRequests": [
+      { "resource": "Microsoft Graph", "scope": "Tasks.Read" },
+      { "resource": "Microsoft Graph", "scope": "Tasks.ReadWrite" },
+      { "resource": "Microsoft Graph", "scope": "ApprovalSolution.Read" },
+      { "resource": "Microsoft Graph", "scope": "ApprovalSolutionResponse.ReadWrite" },
+      { "resource": "Microsoft Graph", "scope": "Sites.Read.All" },
+      { "resource": "Microsoft Graph", "scope": "Mail.Read" },
+      { "resource": "Microsoft Graph", "scope": "People.Read.All" },
+      { "resource": "Microsoft Graph", "scope": "OnlineMeetingTranscript.Read.All" },
+      { "resource": "Microsoft Graph", "scope": "Chat.Read" },
+      { "resource": "Microsoft Graph", "scope": "ChannelMessage.Read.All" },
+      { "resource": "Microsoft Graph", "scope": "ExternalItem.Read.All" }
     ]
   },
   "paths": {
