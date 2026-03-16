@@ -12,8 +12,8 @@ import * as strings from 'MyWorkHubWebPartStrings';
 import MyWorkHub from './components/MyWorkHub';
 import { IMyWorkHubProps } from './components/IMyWorkHubProps';
 import type { MSGraphClientV3 } from '@microsoft/sp-http';
-import { MSGraphClientFactory, AadTokenProviderFactory } from '@microsoft/sp-http';
-import { createGraphBetaCall } from './services/GraphBetaService';
+import { MSGraphClientFactory } from '@microsoft/sp-http';
+import { createGraphBetaCallFromClient } from './services/GraphBetaService';
 
 export interface IMyWorkHubWebPartProps {
   description: string;
@@ -70,22 +70,15 @@ export default class MyWorkHubWebPart extends BaseClientSideWebPart<IMyWorkHubWe
     }
 
     const graphFactory = serviceScope.consume(MSGraphClientFactory.serviceKey);
-    const tokenProviderFactory = serviceScope.consume(AadTokenProviderFactory.serviceKey);
-
-    const getToken = (): Promise<string> => {
-      return tokenProviderFactory.getTokenProvider().then(provider =>
-        provider.getToken('https://graph.microsoft.com')
-      );
-    };
-
-    this._callGraphBeta = createGraphBetaCall(getToken);
 
     return Promise.all([
       graphFactory.getClient('3'),
       this._getEnvironmentMessage()
     ]).then(([client, message]) => {
       this._msGraphClient = client;
+      this._callGraphBeta = createGraphBetaCallFromClient(client);
       this._environmentMessage = message;
+      this.render();
     });
   }
 

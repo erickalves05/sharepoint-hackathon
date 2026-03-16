@@ -61,9 +61,12 @@ export const SummaryTab: React.FunctionComponent<ISummaryTabProps> = (props) => 
         contextParts.push('Tasks: could not load.');
       }
       try {
-        const approvals = await callGraphBeta("/solutions/approval/approvalItems?$filter=state eq 'pending'&$top=10");
-        const count = (approvals.value || []).length;
-        const names = (approvals.value || []).slice(0, 3).map((a: { displayName?: string }) => a.displayName);
+        // Graph doesn't allow $filter on approvals; order by createdDateTime and filter client-side
+        const approvals = await callGraphBeta("/solutions/approval/approvalItems?$orderby=createdDateTime desc&$top=50");
+        const raw = (approvals.value || []) as Array<{ displayName?: string; state?: string }>;
+        const pending = raw.filter((a) => a.state === 'pending');
+        const count = pending.length;
+        const names = pending.slice(0, 3).map((a) => a.displayName);
         contextParts.push(`Pending approvals: ${count} (e.g. ${names.join(', ') || 'none'}).`);
       } catch {
         contextParts.push('Approvals: could not load.');

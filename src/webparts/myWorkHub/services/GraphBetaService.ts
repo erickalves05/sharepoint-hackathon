@@ -1,37 +1,33 @@
+import type { MSGraphClientV3 } from '@microsoft/sp-http';
 import type { IGraphBetaRequestOptions } from '../components/IMyWorkHubProps';
 
 const GRAPH_BETA_BASE = 'https://graph.microsoft.com/beta';
 
+function toBetaPath(path: string): string {
+  if (path.indexOf('http') === 0) return path;
+  const p = path.indexOf('/') === 0 ? path : `/${path}`;
+  return `${GRAPH_BETA_BASE}${p}`;
+}
+
 /**
- * Create a function that calls Microsoft Graph beta using the provided token getter.
- * Used for Approvals app API (beta only).
+ * Create a function that calls Microsoft Graph beta using the same MSGraphClient (same token).
+ * Uses client.api(betaUrl) so no separate token is needed for the beta endpoint.
  */
-export function createGraphBetaCall(
-  getToken: () => Promise<string>
+export function createGraphBetaCallFromClient(
+  client: MSGraphClientV3
 ): (path: string, options?: IGraphBetaRequestOptions) => Promise<{ value?: unknown[]; [key: string]: unknown }> {
   return async (
     path: string,
     options?: IGraphBetaRequestOptions
   ): Promise<{ value?: unknown[]; [key: string]: unknown }> => {
-    const url = path.indexOf('http') === 0 ? path : `${GRAPH_BETA_BASE}${path.indexOf('/') === 0 ? path : `/${path}`}`;
-    const token = await getToken();
-    const init: RequestInit = {
-      method: options?.method || 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json'
-      }
-    };
-    if (options?.body && (options.method === 'POST' || options.method === 'PATCH')) {
-      init.body = JSON.stringify(options.body);
+    const fullPath = toBetaPath(path);
+    const method = options?.method || 'GET';
+    if (method === 'POST') {
+      return (await client.api(fullPath).post(options?.body ?? {})) as { value?: unknown[]; [key: string]: unknown };
     }
-    const response = await fetch(url, init);
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Graph beta error ${response.status}: ${text || response.statusText}`);
+    if (method === 'PATCH') {
+      return (await client.api(fullPath).patch(options?.body ?? {})) as { value?: unknown[]; [key: string]: unknown };
     }
-    const json = await response.json();
-    return json as { value?: unknown[]; [key: string]: unknown };
+    return (await client.api(fullPath).get()) as { value?: unknown[]; [key: string]: unknown };
   };
 }

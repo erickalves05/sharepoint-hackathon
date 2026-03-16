@@ -36,8 +36,10 @@ export const ApprovalsTab: React.FunctionComponent<IApprovalsTabProps> = (props)
     }
     setState(prev => ({ ...prev, loading: true, error: undefined }));
     try {
-      const result = await callGraphBeta("/solutions/approval/approvalItems?$filter=state eq 'pending'&$top=50");
-      const value = (result.value || []) as IApprovalItem[];
+      // Graph doesn't allow $filter on approvals; fetch ordered by createdDateTime and filter client-side
+      const result = await callGraphBeta("/solutions/approval/approvalItems?$orderby=createdDateTime desc&$top=100");
+      const raw = (result.value || []) as IApprovalItem[];
+      const value = raw.filter((a) => a.state === 'pending');
       setState({ items: value, loading: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
