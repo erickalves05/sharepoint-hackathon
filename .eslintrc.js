@@ -17,9 +17,9 @@ module.exports = {
         // Require Jest module mocking APIs to be called before any other statements in their code block. https://www.npmjs.com/package/@rushstack/eslint-plugin
         '@rushstack/hoist-jest-mock': 1,
         // Require chunk names for dynamic imports in SPFx projects. https://www.npmjs.com/package/@rushstack/eslint-plugin
-        '@rushstack/import-requires-chunk-name': 1,
+        '@rushstack/import-requires-chunk-name': 'off',
         // Ensure that React components rendered with ReactDOM.render() are unmounted with ReactDOM.unmountComponentAtNode(). https://www.npmjs.com/package/@rushstack/eslint-plugin
-        '@rushstack/pair-react-dom-render-unmount': 1,
+        '@rushstack/pair-react-dom-render-unmount': 'off',
         // Require regular expressions to be constructed from string constants rather than dynamically building strings at runtime. https://www.npmjs.com/package/@rushstack/eslint-plugin-security
         '@rushstack/security/no-unsafe-regexp': 1,
         // STANDARDIZED BY:   @typescript-eslint\eslint-plugin\dist\configs\recommended.json
