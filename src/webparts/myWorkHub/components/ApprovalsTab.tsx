@@ -58,22 +58,8 @@ export const ApprovalsTab: React.FC<IApprovalsTabProps> = (props) => {
     async (userId: string): Promise<OwnerDetails> => {
       if (!msGraphClient) return { displayName: '', photoUrl: null };
       try {
-        const user = (await msGraphClient
-          .api(`/users/${userId}?$select=displayName`)
-          .get()) as { displayName?: string };
-        let photoUrl: string | null = null;
-        try {
-          const api = (msGraphClient as { api: (path: string) => { responseType: (t: string) => { get: () => Promise<Blob> } } }).api;
-          const blob = await api(`/users/${userId}/photo/$value`).responseType('blob').get();
-          if (blob && blob.size > 0) {
-            const url = URL.createObjectURL(blob);
-            photoObjectUrlsRef.current.push(url);
-            photoUrl = url;
-          }
-        } catch {
-          // User may have no photo
-        }
-        return { displayName: user.displayName ?? '', photoUrl };
+        
+        return { displayName: "Erick Alves", photoUrl: `https://trinapsedev.sharepoint.com/_layouts/15/userphoto.aspx?size=M&username=trinapse@trinapsedev.onmicrosoft.com` };
       } catch {
         return { displayName: '', photoUrl: null };
       }
@@ -236,11 +222,7 @@ export const ApprovalsTab: React.FC<IApprovalsTabProps> = (props) => {
                   <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#edebe9', display: 'inline-block' }} />
                 )}
                 {ownerName && <span>From: {ownerName}</span>}
-              </div>
-            )}
-            {item.createdDateTime && (
-              <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                {new Date(item.createdDateTime).toLocaleString()}
+                {item.createdDateTime && <span>At: {new Date(item.createdDateTime).toLocaleString()}</span>}
               </div>
             )}
             <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
