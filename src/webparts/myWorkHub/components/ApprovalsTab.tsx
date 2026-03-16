@@ -25,7 +25,7 @@ interface IApprovalsTabState {
   error?: string;
 }
 
-export const ApprovalsTab: React.FunctionComponent<IApprovalsTabProps> = (props) => {
+export const ApprovalsTab: React.FC<IApprovalsTabProps> = (props) => {
   const { callGraphBeta, onError } = props;
   const [state, setState] = React.useState<IApprovalsTabState>({ items: [], loading: true });
 

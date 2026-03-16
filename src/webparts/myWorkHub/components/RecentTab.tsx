@@ -27,7 +27,7 @@ interface IRecentTabState {
   error?: string;
 }
 
-export const RecentTab: React.FunctionComponent<IRecentTabProps> = (props) => {
+export const RecentTab: React.FC<IRecentTabProps> = (props) => {
   const { msGraphClient, onError } = props;
   const [state, setState] = React.useState<IRecentTabState>({ items: [], loading: true });
 

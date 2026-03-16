@@ -13,4 +13,6 @@ export interface IUnifiedTask {
   listId?: string;
   /** Needed for PATCH to complete (To Do: listId + taskId; Planner: taskId). */
   taskId: string;
+  /** True when task is a flagged email (To Do with linkedResources[0].webUrl). */
+  isFlaggedEmail?: boolean;
 }

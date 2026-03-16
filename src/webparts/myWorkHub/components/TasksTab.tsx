@@ -1,7 +1,9 @@
 import * as React from 'react';
 import type { MSGraphClientV3 } from '@microsoft/sp-http';
 import { Spinner } from '@fluentui/react/lib/Spinner';
-import { PrimaryButton } from '@fluentui/react/lib/Button';
+import { Icon } from '@fluentui/react/lib/Icon';
+import { Checkbox } from '@fluentui/react/lib/Checkbox';
+import type { ICheckboxStyleProps } from '@fluentui/react/lib/Checkbox';
 import type { IUnifiedTask } from './tasks/ITaskItem';
 
 export interface ITasksTabProps {
@@ -14,7 +16,14 @@ interface ITasksTabState {
   loading: boolean;
 }
 
-export const TasksTab: React.FunctionComponent<ITasksTabProps> = (props) => {
+function isDueToday(dateStr: string | undefined): boolean {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  const today = new Date();
+  return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+}
+
+export const TasksTab: React.FC<ITasksTabProps> = (props) => {
   const [state, setState] = React.useState<ITasksTabState>({ tasks: [], loading: true });
   const { msGraphClient, onError } = props;
 
@@ -27,22 +36,33 @@ export const TasksTab: React.FunctionComponent<ITasksTabProps> = (props) => {
         .api('/me/todo/lists')
         .get() as { value: Array<{ id: string; displayName: string }> };
 
+      type TodoTaskResponse = {
+        id: string;
+        title: string;
+        status: string;
+        dueDateTime?: { dateTime: string };
+        webUrl?: string;
+        linkedResources?: Array<{ webUrl?: string }>;
+      };
       for (const list of todoLists.value || []) {
         const tasksRes = await msGraphClient
-          .api(`/me/todo/lists/${list.id}/tasks`)
-          .get() as { value: Array<{ id: string; title: string; status: string; dueDateTime?: { dateTime: string }; webUrl?: string }> };
+          .api(`/me/todo/lists/${list.id}/tasks?$expand=linkedResources`)
+          .get() as { value: TodoTaskResponse[] };
         for (const t of tasksRes.value || []) {
           if (t.status !== 'completed') {
+            const mailUrl = t.linkedResources?.[0]?.webUrl;
+            const displayTitle = t.title.replace(/\s*\(.*$/, '').trim();
             all.push({
               id: t.id,
               taskId: t.id,
               listId: list.id,
-              title: t.title,
+              title: displayTitle,
               dueDate: t.dueDateTime?.dateTime,
               source: 'ToDo',
               listName: list.displayName,
-              webUrl: t.webUrl,
-              isCompleted: false
+              webUrl: mailUrl ?? t.webUrl ?? `https://to-do.office.com/tasks/id/${t.id}/details`,
+              isCompleted: false,
+              isFlaggedEmail: !!mailUrl
             });
           }
         }
@@ -61,7 +81,7 @@ export const TasksTab: React.FunctionComponent<ITasksTabProps> = (props) => {
             title: t.title,
             dueDate: t.dueDateTime,
             source: 'Planner',
-            webUrl: t.webUrl,
+            webUrl: `https://planner.cloud.microsoft/webui/plan/${t.planId}/view/board/task/${t.id}`,
             isCompleted: false
           });
         }
@@ -93,18 +113,17 @@ export const TasksTab: React.FunctionComponent<ITasksTabProps> = (props) => {
           .patch({ status: 'completed' });
       } else if (task.source === 'Planner') {
         const existing = await msGraphClient
-          .api(`/me/planner/tasks/${task.taskId}`)
-          .select('@odata.etag,percentComplete')
+          .api(`/planner/tasks/${task.taskId}`)
           .get() as { '@odata.etag'?: string };
         const etag = existing['@odata.etag'];
         await msGraphClient
-          .api(`/me/planner/tasks/${task.taskId}`)
+          .api(`/planner/tasks/${task.taskId}`)
           .header('If-Match', etag || '*')
           .patch({ percentComplete: 100 });
       }
       setState(prev => ({
         ...prev,
-        tasks: prev.tasks.filter(t => t.id !== task.id)
+        tasks: prev.tasks.map(t => t.id === task.id ? { ...t, isCompleted: true } : t)
       }));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -123,21 +142,109 @@ export const TasksTab: React.FunctionComponent<ITasksTabProps> = (props) => {
   return (
     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
       {state.tasks.map(task => (
-        <li key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ flex: 1 }}>
+        <li
+          key={task.id}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '12px',
+            padding: '12px',
+            border: '1px solid #edebe9',
+            borderRadius: '4px',
+            backgroundColor: task.isCompleted ? '#faf9f8' : undefined
+          }}
+        >
+          <Checkbox
+            ariaLabel={`Mark "${task.title}" as complete`}
+            checked={task.isCompleted}
+            disabled={task.isCompleted}
+            onChange={() => !task.isCompleted && void onComplete(task)}
+            styles={{
+              root: { margin: 0 },
+              checkbox: (styleProps: ICheckboxStyleProps) => ({
+                borderRadius: '50%',
+                width: 22,
+                height: 22,
+                ...(styleProps.checked && {
+                  background: '#107c10',
+                  borderColor: '#107c10'
+                })
+              }),
+              checkmark: (styleProps: ICheckboxStyleProps) =>
+                styleProps.checked ? { color: '#fff' } : {}
+            }}
+          />
+          {task.webUrl ? (
+            <a
+              href={task.webUrl}
+              target="_blank"
+              rel="noreferrer"
+              title={task.isFlaggedEmail ? 'Open mail' : task.source === 'Planner' ? 'Open in Planner' : 'Open in To Do'}
+              style={{ display: 'flex', color: '#605e5c', textDecoration: 'none' }}
+            >
+              <Icon
+                iconName={task.isFlaggedEmail ? 'OutlookLogo' : task.source === 'Planner' ? 'PlannerLogo' : 'ToDoLogoOutline'}
+                styles={{ root: { fontSize: 18, flexShrink: 0 } }}
+              />
+            </a>
+          ) : (
+            <Icon
+              iconName={task.isFlaggedEmail ? 'OutlookLogo' : task.source === 'Planner' ? 'PlannerLogo' : 'ToDoLogoOutline'}
+              title={task.isFlaggedEmail ? 'Outlook' : task.source === 'Planner' ? 'Microsoft Planner' : 'Microsoft To Do'}
+              styles={{ root: { fontSize: 18, color: '#605e5c', flexShrink: 0 } }}
+            />
+          )}
+          <span style={{ flex: 1, minWidth: 0 }}>
             {task.webUrl ? (
-              <a href={task.webUrl} target="_blank" rel="noreferrer">{task.title}</a>
+              <a
+                href={task.webUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  textDecoration: task.isCompleted ? 'line-through' : undefined,
+                  color: task.isCompleted ? '#605e5c' : undefined
+                }}
+              >
+                {task.title}
+              </a>
             ) : (
-              task.title
-            )}
-            {task.dueDate && (
-              <span style={{ marginLeft: '8px', fontSize: '12px', color: '#605e5c' }}>
-                Due {new Date(task.dueDate).toLocaleDateString()}
+              <span
+                style={{
+                  textDecoration: task.isCompleted ? 'line-through' : undefined,
+                  color: task.isCompleted ? '#605e5c' : undefined
+                }}
+              >
+                {task.title}
               </span>
             )}
-            <span style={{ marginLeft: '8px', fontSize: '12px' }}>({task.source}{task.listName ? ` · ${task.listName}` : ''})</span>
+            {task.listName && task.source === 'ToDo' && (
+              <span style={{ marginLeft: '6px', fontSize: '12px', color: '#605e5c' }}>· {task.listName}</span>
+            )}
+            {task.dueDate && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '8px', gap: '4px' }}>
+                <Icon iconName="Calendar" styles={{ root: { fontSize: 12, color: '#605e5c' } }} />
+                {isDueToday(task.dueDate) ? (
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#c43e1c',
+                      backgroundColor: '#fde7e6',
+                      padding: '2px 8px',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    Today
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '12px', color: '#605e5c' }}>
+                    {new Date(task.dueDate).toLocaleDateString()}
+                  </span>
+                )}
+              </span>
+            )}
           </span>
-          <PrimaryButton text="Complete" onClick={() => onComplete(task)} />
         </li>
       ))}
     </ul>

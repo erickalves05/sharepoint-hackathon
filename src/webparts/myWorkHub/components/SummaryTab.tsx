@@ -20,7 +20,7 @@ interface ICopilotChatResponse {
   messages?: ICopilotMessage[];
 }
 
-export const SummaryTab: React.FunctionComponent<ISummaryTabProps> = (props) => {
+export const SummaryTab: React.FC<ISummaryTabProps> = (props) => {
   const { msGraphClient, callGraphBeta, onError } = props;
   const [loading, setLoading] = React.useState(false);
   const [summary, setSummary] = React.useState<string | undefined>(undefined);
