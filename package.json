@@ -17,6 +17,7 @@
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "@fluentui/react": "^8.106.4",
+    "react-markdown": "^8.0.7",
     "@microsoft/sp-core-library": "1.21.1",
     "@microsoft/sp-component-base": "1.21.1",
     "@microsoft/sp-property-pane": "1.21.1",

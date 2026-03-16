@@ -51,6 +51,7 @@ export default class MyWorkHub extends React.Component<IMyWorkHubProps> {
             <PivotItem headerText="Approvals" itemKey="approvals">
               <div className={styles.tabContent}>
                 <ApprovalsTab
+                  msGraphClient={msGraphClient}
                   callGraphBeta={callGraphBeta}
                   onError={onError}
                 />
