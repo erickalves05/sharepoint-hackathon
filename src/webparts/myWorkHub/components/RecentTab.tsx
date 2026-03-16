@@ -36,7 +36,7 @@ export const RecentTab: React.FunctionComponent<IRecentTabProps> = (props) => {
     void (async (): Promise<void> => {
       try {
         const result = await msGraphClient
-          .api('/me/insights/trending?$top=15')
+          .api('/me/drive/recent?$top=15')
           .get() as { value?: ITrendingItem[] };
         if (!cancelled) {
           setState({ items: result.value || [], loading: false });

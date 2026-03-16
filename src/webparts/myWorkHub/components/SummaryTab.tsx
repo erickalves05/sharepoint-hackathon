@@ -72,9 +72,9 @@ export const SummaryTab: React.FunctionComponent<ISummaryTabProps> = (props) => 
         contextParts.push('Approvals: could not load.');
       }
       try {
-        const trending = await msGraphClient.api('/me/insights/trending?$top=5').get() as { value?: Array<{ resourceVisualization?: { title?: string } }> };
-        const titles = (trending.value || []).map(v => v.resourceVisualization?.title).filter(Boolean);
-        contextParts.push(`Recent/trending files: ${titles.length} (e.g. ${titles.slice(0, 2).join(', ') || 'none'}).`);
+        const recent = await msGraphClient.api('/me/drive/recent?$top=5').get() as { value?: Array<{ name?: string; resourceVisualization?: { title?: string } }> };
+        const titles = (recent.value || []).map(v => v.name ?? v.resourceVisualization?.title).filter(Boolean);
+        contextParts.push(`Recent files: ${titles.length} (e.g. ${titles.slice(0, 2).join(', ') || 'none'}).`);
       } catch {
         contextParts.push('Recent files: could not load.');
       }
