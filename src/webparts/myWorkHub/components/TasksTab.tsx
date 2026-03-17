@@ -23,6 +23,20 @@ function isDueToday(dateStr: string | undefined): boolean {
   return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
 }
 
+function isDueTomorrow(dateStr: string | undefined): boolean {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return d.getDate() === tomorrow.getDate() && d.getMonth() === tomorrow.getMonth() && d.getFullYear() === tomorrow.getFullYear();
+}
+
+function formatDueDate(dateStr: string): string {
+  if (isDueToday(dateStr)) return 'Today';
+  if (isDueTomorrow(dateStr)) return 'Tomorrow';
+  return new Date(dateStr).toLocaleDateString();
+}
+
 export const TasksTab: React.FC<ITasksTabProps> = (props) => {
   const [state, setState] = React.useState<ITasksTabState>({ tasks: [], loading: true });
   const { msGraphClient, onError } = props;
@@ -237,9 +251,22 @@ export const TasksTab: React.FC<ITasksTabProps> = (props) => {
                   >
                     Today
                   </span>
+                ) : isDueTomorrow(task.dueDate) ? (
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#106ebe',
+                      backgroundColor: '#e6f2fa',
+                      padding: '2px 8px',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    Tomorrow
+                  </span>
                 ) : (
                   <span style={{ fontSize: '12px', color: '#605e5c' }}>
-                    {new Date(task.dueDate).toLocaleDateString()}
+                    {formatDueDate(task.dueDate)}
                   </span>
                 )}
               </span>
