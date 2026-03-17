@@ -86,12 +86,24 @@ export const TasksTab: React.FC<ITasksTabProps> = (props) => {
         .api('/me/planner/tasks')
         .get() as { value: Array<{ id: string; title: string; planId: string; dueDateTime?: string; percentComplete?: number; webUrl?: string }> };
 
+      const planIds: string[] = Array.from(new Set((plannerRes.value || []).map((t) => t.planId).filter((id): id is string => !!id)));
+      const planNames: Record<string, string> = {};
+      for (const planId of planIds) {
+        try {
+          const plan = (await msGraphClient.api(`/planner/plans/${planId}?$select=title`).get()) as { title?: string };
+          planNames[planId] = plan.title ?? '';
+        } catch {
+          planNames[planId] = '';
+        }
+      }
+
       for (const t of plannerRes.value || []) {
         if (t.percentComplete !== 100) {
           all.push({
             id: `planner-${t.id}`,
             taskId: t.id,
             planId: t.planId,
+            planName: planNames[t.planId] ?? '',
             title: t.title,
             dueDate: t.dueDateTime,
             source: 'Planner',
@@ -232,8 +244,11 @@ export const TasksTab: React.FC<ITasksTabProps> = (props) => {
                 {task.title}
               </span>
             )}
-            {task.listName && task.source === 'ToDo' && (
+            {task.source === 'ToDo' && task.listName && (
               <span style={{ marginLeft: '6px', fontSize: '12px', color: '#605e5c' }}>· {task.listName}</span>
+            )}
+            {task.source === 'Planner' && task.planName && (
+              <span style={{ marginLeft: '6px', fontSize: '12px', color: '#605e5c' }}>· {task.planName}</span>
             )}
             {task.dueDate && (
               <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '8px', gap: '4px' }}>

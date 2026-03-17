@@ -7,6 +7,7 @@ export interface IUnifiedTask {
   source: TaskSource;
   listName?: string;
   planId?: string;
+  planName?: string;
   webUrl?: string;
   isCompleted: boolean;
   /** For To Do: list id. For Planner: task id. */
