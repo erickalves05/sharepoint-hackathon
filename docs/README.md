@@ -1,23 +1,24 @@
 # My Work Hub — One productivity hub (SPFx web part)
 
-**Workspace for maturing the hackathon idea:** a single SPFx web part that combines **Tasks/actions**, **My approvals**, and **My recent work**, with **Copilot** to add AI value. **Product name: My Work Hub.**
+**Implemented:** A single SPFx web part that combines **Tasks**, **Meetings**, **Approvals**, **Recent files**, and **Copilot** in one place. **Product name: My Work Hub.**
 
 ## What this folder is for
 
 - **Discuss** scope, UX, and technical options.
 - **Capture** decisions and references (Microsoft Learn, Graph, Copilot APIs).
-- **Evolve** the concept before implementation.
+- **Document** implementation progress and hackathon submission.
 
-## Quick concept
+## Implemented features
 
-| Section | Purpose |
-|--------|----------|
-| **Tasks / actions hub** | One place for To Do tasks, Planner tasks, and (where possible) flagged Outlook items. |
-| **My approvals hub** | Pending approval requests (e.g. Teams Approvals app / Power Automate) in one list with quick approve/reject. |
-| **My recent work** | Recent/recommended files via **item insights** (Graph). |
-| **Copilot spice** | Default: **“Summarize my pending work today”** (Chat API); optional follow-up. |
+| Tab | Purpose |
+|-----|---------|
+| **Tasks** | Unified To Do + Planner tasks, including flagged emails. Source icons (Outlook, To Do, Planner), due date badges (Today/Tomorrow), plan/list names, round checkbox to complete. |
+| **Meetings** | Next 5 upcoming calendar events. Date badges (Today/Tomorrow), organizer, time range, link to open meeting. |
+| **Approvals** | Pending approvals with markdown descriptions, requester photo/name, reject-with-reason dialog. |
+| **Recent** | Recent OneDrive files via `/me/drive/recent`. File-type icons (Excel, Word, PowerPoint, PDF), creator, last modified. |
+| **Summary** | Copilot summary with rich context (tasks, approvals, recent files) and actionable recommendations. |
 
-One web part, **four tabs** in order: **Tasks | Approvals | Recent | Summary** (Summary = Copilot).
+One web part, **five tabs** in order: **Tasks | Meetings | Approvals | Recent | Summary**.
 
 ## Documents in this workspace
 
@@ -25,10 +26,5 @@ One web part, **four tabs** in order: **Tasks | Approvals | Recent | Summary** (
 |----------|----------|
 | [CONCEPT.md](./CONCEPT.md) | Unified product concept, user value, and high-level UX. |
 | [POSSIBILITIES.md](./POSSIBILITIES.md) | Feature ideas, scope options, and what to build first vs later. |
-| [TECHNICAL_NOTES.md](./TECHNICAL_NOTES.md) | APIs, permissions, and implementation notes from Microsoft Learn. |
-
-## Next steps
-
-1. Read CONCEPT.md and POSSIBILITIES.md.
-2. Decide MVP scope (which sections + which Copilot feature first).
-3. Use TECHNICAL_NOTES.md when scaffolding the SPFx project and calling Graph/Copilot.
+| [TECHNICAL_NOTES.md](./TECHNICAL_NOTES.md) | APIs, permissions, and implementation notes (updated with actual choices). |
+| [SUBMISSION.md](./SUBMISSION.md) | Hackathon submission form draft (title, name, description). |

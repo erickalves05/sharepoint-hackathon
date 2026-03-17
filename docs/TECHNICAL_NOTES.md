@@ -22,17 +22,19 @@ References and implementation notes from **Microsoft Learn** and Graph/Copilot d
 - **Overview:** [To Do API overview](https://learn.microsoft.com/en-us/graph/todo-concept-overview).
 - **Endpoints (v1.0):**
   - List task lists: `GET https://graph.microsoft.com/v1.0/me/todo/lists`
-  - List tasks: `GET https://graph.microsoft.com/v1.0/me/todo/lists/{todoTaskListId}/tasks`
+  - List tasks: `GET https://graph.microsoft.com/v1.0/me/todo/lists/{todoTaskListId}/tasks?$expand=linkedResources`
   - Update task (e.g. complete): `PATCH https://graph.microsoft.com/v1.0/me/todo/lists/{todoTaskListId}/tasks/{todoTaskId}` — set `status: completed`.
 - **Permissions:** `Tasks.Read`, `Tasks.ReadWrite` (delegated).
-- **Notes:** Outlook Tasks API is deprecated; use To Do only.
+- **Notes:** Outlook Tasks API is deprecated; use To Do only. **Flagged emails** appear as To Do tasks from the default list; use `linkedResources[0].webUrl` to open the mail. Strip title suffix `(ID: ...)` for display.
 
 ### Planner (group/team tasks)
 
 - **Overview:** [Planner REST API](https://learn.microsoft.com/en-us/graph/api/resources/planner-overview?view=graph-rest-1.0), [Planner tasks and plans](https://learn.microsoft.com/en-us/graph/planner-concept-overview).
 - **Endpoint:** Tasks assigned to me: `GET https://graph.microsoft.com/v1.0/me/planner/tasks`
-- **Permissions:** `Tasks.Read` or `Tasks.ReadWrite` (delegated); may need `Group.Read.All` for plan/group details.
-- **Response:** `plannerTask` (title, planId, bucketId, dueDateTime, assignments, etc.). Resolve plan/bucket names with extra GETs if needed.
+- **Plan name:** `GET https://graph.microsoft.com/v1.0/planner/plans/{planId}?$select=title` to resolve plan title for display.
+- **Complete task:** GET task for `@odata.etag`, then `PATCH` with `If-Match` header and `percentComplete: 100`. Do **not** use `$select=@odata.etag` (invalid).
+- **Permissions:** `Tasks.Read`, `Tasks.ReadWrite` (delegated).
+- **Response:** `plannerTask` (title, planId, dueDateTime, percentComplete, etc.).
 
 ---
 
@@ -41,7 +43,7 @@ References and implementation notes from **Microsoft Learn** and Graph/Copilot d
 - **Overview:** [Approvals app API](https://learn.microsoft.com/en-us/graph/approvals-app-api).
 - **Resource:** [approvalItem](https://learn.microsoft.com/en-us/graph/api/resources/approvalitem?view=graph-rest-beta) (beta only).
 - **Endpoints (beta):**
-  - List approval items: `GET https://graph.microsoft.com/beta/solutions/approval/approvalItems` — supports `$filter`, `$orderby`, `$top`, `$select`. See [approvalsolution-list-approvalitems](https://learn.microsoft.com/en-us/graph/api/approvalsolution-list-approvalitems?view=graph-rest-beta).
+  - List approval items: `GET https://graph.microsoft.com/beta/solutions/approval/approvalItems?$orderby=createdDateTime desc&$top=100` — **$filter on state is not allowed**; filter pending client-side. See [approvalsolution-list-approvalitems](https://learn.microsoft.com/en-us/graph/api/approvalsolution-list-approvalitems?view=graph-rest-beta).
   - Get one: `GET https://graph.microsoft.com/beta/solutions/approval/approvalItems/{id}`.
   - Create response (approve/reject): `POST https://graph.microsoft.com/beta/solutions/approval/approvalItems/{id}/responses` — [approvalItem-post-responses](https://learn.microsoft.com/en-us/graph/api/approvalitem-post-responses?view=graph-rest-beta).
 - **Permissions:** `ApprovalSolution.Read` (read), `ApprovalSolution.ReadWrite` or `ApprovalSolutionResponse.ReadWrite` (to respond). Delegated only; no personal accounts.
@@ -50,9 +52,17 @@ References and implementation notes from **Microsoft Learn** and Graph/Copilot d
 
 ---
 
+## 3.5. Microsoft Graph — Calendar (Meetings)
+
+- **Endpoint:** `GET https://graph.microsoft.com/v1.0/me/events?$filter=start/dateTime ge '{isoNow}'&$orderby=start/dateTime&$top=5&$select=subject,start,end,organizer,webLink`
+- **Permissions:** `Calendars.Read` (delegated).
+- **Response:** Event with `subject`, `start.dateTime`, `end.dateTime`, `organizer.emailAddress.name`, `webLink`. Display with date badges (Today/Tomorrow), time range, organizer. Click opens `webLink`.
+
+---
+
 ## 4. Microsoft Graph — Recent work (My Work Hub: item insights)
 
-**Decision:** My Work Hub uses **item insights** for the Recent tab (not `me/drive/recent`).
+**Implemented:** My Work Hub uses **`/me/drive/recent`** for the Recent tab.
 
 ### Item insights (our choice)
 
@@ -61,9 +71,9 @@ References and implementation notes from **Microsoft Learn** and Graph/Copilot d
 - **API:** [Insights API (beta)](https://learn.microsoft.com/en-us/graph/api/resources/iteminsights?view=graph-rest-beta), [v1.0](https://learn.microsoft.com/en-us/graph/api/resources/iteminsights?view=graph-rest-1.0). Explore `trending`, `used`, `shared` and related endpoints.
 - **Permissions:** Verify in the insights API reference (e.g. `Sites.Read.All` or per-endpoint docs).
 
-### Recent files (deprecated — not used)
+### Recent files (implemented)
 
-- **Endpoint:** `GET https://graph.microsoft.com/v1.0/me/drive/recent` — **deprecated**, stops Nov 2026. We do **not** use this; we use item insights.
+- **Endpoint:** `GET https://graph.microsoft.com/v1.0/me/drive/recent?$top=15` — Returns DriveItem array. Response has `name`, `webUrl`, `lastModifiedDateTime`, `createdBy`, `file.mimeType`, `remoteItem` for shared. Map mimeType to icons; show creator, last modified.
 
 ### User activity (optional)
 
@@ -100,23 +110,23 @@ Request these in the SPFx package (and ensure admin consents if needed):
 | To Do | `Tasks.Read`, `Tasks.ReadWrite` |
 | Planner | `Tasks.Read`, `Tasks.ReadWrite`; optionally `Group.Read.All` |
 | Approvals (beta) | `ApprovalSolution.Read`, `ApprovalSolutionResponse.ReadWrite` (or ReadWrite for solution) |
-| Recent / files | `Files.Read` |
-| Item insights | Per insights API reference (e.g. `Sites.Read.All`) |
+| Recent / files | `Files.Read.All` |
+| Calendar (Meetings) | `Calendars.Read` |
 | Copilot Chat | Copilot-related scope (see Copilot API docs; may be under `Copilot.Read` or similar — verify in [Copilot extensibility](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/)) |
 
 Use **delegated** permissions so the web part acts as the signed-in user.
 
 ---
 
-## 7. Implementation order (suggested)
+## 7. Implementation (completed)
 
-1. **SPFx scaffold** — React, Fluent UI, MSGraphClient; web part title **My Work Hub**.
-2. **Tasks** — To Do lists + tasks; then Planner tasks; merge and display; mark complete. **Tab 1.**
-3. **Approvals** — List approvalItem (beta); filter to pending + assigned to me; approve/reject. **Tab 2.**
-4. **Recent work** — **Item insights** API; display list with links. **Tab 3.**
-5. **Tabs** — Order: **Tasks | Approvals | Recent | Summary.**
-6. **Copilot** — Chat API: build context from 2–4, send **“Summarize my pending work today,”** show reply in **Summary** tab.
-7. **Polish** — Loading, errors, responsive layout, property pane options.
+1. **SPFx scaffold** — React, Fluent UI, MSGraphClient; configurable web part title in property pane.
+2. **Tasks** — To Do (with linkedResources for flagged emails) + Planner; plan/list names; source icons; due badges (Today/Tomorrow); round checkbox to complete. **Tab 1.**
+3. **Meetings** — Next 5 calendar events; date badges; organizer; time; link to open. **Tab 2.**
+4. **Approvals** — List approvalItems (beta); client-side filter pending; markdown description; owner photo/name; reject-with-reason dialog. **Tab 3.**
+5. **Recent** — `/me/drive/recent`; file-type icons; creator; last modified. **Tab 4.**
+6. **Summary** — Copilot Chat API; rich context (tasks, approvals, recent); actionable prompt; ReactMarkdown response. **Tab 5.**
+7. **Tabs** — Order: **Tasks | Meetings | Approvals | Recent | Summary.**
 
 ---
 
