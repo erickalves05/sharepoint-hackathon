@@ -34,6 +34,7 @@
       }
     ],
     "webApiPermissionRequests": [
+      { "resource": "Microsoft Graph", "scope": "Calendars.Read" },
       { "resource": "Microsoft Graph", "scope": "Tasks.Read" },
       { "resource": "Microsoft Graph", "scope": "Tasks.ReadWrite" },
       { "resource": "Microsoft Graph", "scope": "ApprovalSolution.Read" },

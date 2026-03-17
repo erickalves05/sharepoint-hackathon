@@ -5,6 +5,7 @@ import { Pivot, PivotItem } from '@fluentui/react/lib/Pivot';
 import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
 import { Spinner } from '@fluentui/react/lib/Spinner';
 import { TasksTab } from './TasksTab';
+import { MeetingsTab } from './MeetingsTab';
 import { ApprovalsTab } from './ApprovalsTab';
 import { RecentTab } from './RecentTab';
 import { SummaryTab } from './SummaryTab';
@@ -47,6 +48,14 @@ export default class MyWorkHub extends React.Component<IMyWorkHubProps> {
             <PivotItem headerText="Tasks" itemKey="tasks">
               <div className={styles.tabContent}>
                 <TasksTab
+                  msGraphClient={msGraphClient}
+                  onError={onError}
+                />
+              </div>
+            </PivotItem>
+            <PivotItem headerText="Meetings" itemKey="meetings">
+              <div className={styles.tabContent}>
+                <MeetingsTab
                   msGraphClient={msGraphClient}
                   onError={onError}
                 />
