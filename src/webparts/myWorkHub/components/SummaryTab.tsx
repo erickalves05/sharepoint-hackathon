@@ -4,6 +4,8 @@ import type { GraphBetaCall } from './IMyWorkHubProps';
 import { Spinner } from '@fluentui/react/lib/Spinner';
 import { PrimaryButton } from '@fluentui/react/lib/Button';
 import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
+import { Icon } from '@fluentui/react/lib/Icon';
+import ReactMarkdown from 'react-markdown';
 
 export interface ISummaryTabProps {
   msGraphClient: MSGraphClientV3;
@@ -35,50 +37,87 @@ export const SummaryTab: React.FC<ISummaryTabProps> = (props) => {
     setError(undefined);
     setSummary(undefined);
     try {
-      const contextParts: string[] = [];
+      const taskLines: string[] = [];
       try {
+        type TodoTask = { title: string; status: string; dueDateTime?: { dateTime: string }; linkedResources?: Array<{ webUrl?: string }> };
         const todoLists = await msGraphClient.api('/me/todo/lists').get() as { value?: Array<{ id: string; displayName: string }> };
-        let taskCount = 0;
-        const taskTitles: string[] = [];
         for (const list of todoLists.value || []) {
-          const tasksRes = await msGraphClient.api(`/me/todo/lists/${list.id}/tasks`).get() as { value?: Array<{ title: string; status: string }> };
+          const tasksRes = await msGraphClient
+            .api(`/me/todo/lists/${list.id}/tasks?$expand=linkedResources`)
+            .get() as { value?: TodoTask[] };
           for (const t of tasksRes.value || []) {
             if (t.status !== 'completed') {
-              taskCount++;
-              if (taskTitles.length < 5) taskTitles.push(t.title);
+              const source = t.linkedResources?.[0]?.webUrl ? 'Flagged mail' : 'To Do';
+              const due = t.dueDateTime?.dateTime ? `, due ${new Date(t.dueDateTime.dateTime).toLocaleDateString()}` : '';
+              const title = t.title.replace(/\s*\(.*$/, '').trim();
+              taskLines.push(`- "${title}" (${source}, list: ${list.displayName}${due})`);
             }
           }
         }
-        const plannerRes = await msGraphClient.api('/me/planner/tasks').get() as { value?: Array<{ title: string; percentComplete?: number }> };
+        type PlannerTask = { title: string; percentComplete?: number; dueDateTime?: string };
+        const plannerRes = await msGraphClient.api('/me/planner/tasks').get() as { value?: PlannerTask[] };
         for (const t of plannerRes.value || []) {
           if (t.percentComplete !== 100) {
-            taskCount++;
-            if (taskTitles.length < 5) taskTitles.push(t.title);
+            const due = t.dueDateTime ? `, due ${new Date(t.dueDateTime).toLocaleDateString()}` : '';
+            taskLines.push(`- "${t.title}" (Planner${due})`);
           }
         }
-        contextParts.push(`Tasks: ${taskCount} pending (e.g. ${taskTitles.slice(0, 3).join(', ') || 'none'}).`);
+        if (taskLines.length > 0) {
+          taskLines.unshift('TASKS:', '');
+        } else {
+          taskLines.push('TASKS:', 'None pending.');
+        }
       } catch {
-        contextParts.push('Tasks: could not load.');
+        taskLines.push('TASKS:', 'Could not load.');
       }
+
+      const approvalLines: string[] = [];
       try {
-        // Graph doesn't allow $filter on approvals; order by createdDateTime and filter client-side
         const approvals = await callGraphBeta("/solutions/approval/approvalItems?$orderby=createdDateTime desc&$top=50");
-        const raw = (approvals.value || []) as Array<{ displayName?: string; state?: string }>;
+        type ApprovalItem = { displayName?: string; state?: string; createdDateTime?: string; owner?: { user?: { displayName?: string } } };
+        const raw = (approvals.value || []) as ApprovalItem[];
         const pending = raw.filter((a) => a.state === 'pending');
-        const count = pending.length;
-        const names = pending.slice(0, 3).map((a) => a.displayName);
-        contextParts.push(`Pending approvals: ${count} (e.g. ${names.join(', ') || 'none'}).`);
+        approvalLines.push('PENDING APPROVALS:', '');
+        if (pending.length > 0) {
+          for (const a of pending) {
+            const owner = "Erick Alves" //a.owner?.user?.displayName ?? 'Unknown';
+            const created = a.createdDateTime ? new Date(a.createdDateTime).toLocaleDateString() : 'unknown date';
+            approvalLines.push(`- "${a.displayName ?? 'Untitled'}" (requested by ${owner}, created ${created})`);
+          }
+        } else {
+          approvalLines.push('None pending.');
+        }
       } catch {
-        contextParts.push('Approvals: could not load.');
+        approvalLines.push('PENDING APPROVALS:', 'Could not load.');
       }
+
+      const recentLines: string[] = [];
       try {
-        const recent = await msGraphClient.api('/me/drive/recent?$top=5').get() as { value?: Array<{ name?: string; resourceVisualization?: { title?: string } }> };
-        const titles = (recent.value || []).map(v => v.name ?? v.resourceVisualization?.title).filter(Boolean);
-        contextParts.push(`Recent files: ${titles.length} (e.g. ${titles.slice(0, 2).join(', ') || 'none'}).`);
+        type DriveItem = { name?: string; lastModifiedDateTime?: string };
+        const recent = await msGraphClient.api('/me/drive/recent?$top=10').get() as { value?: DriveItem[] };
+        const items = (recent.value || []).filter((v) => v.name);
+        recentLines.push('RECENT FILES:', '');
+        if (items.length > 0) {
+          for (const v of items) {
+            const modified = v.lastModifiedDateTime ? `, modified ${new Date(v.lastModifiedDateTime).toLocaleDateString()}` : '';
+            recentLines.push(`- ${v.name}${modified}`);
+          }
+        } else {
+          recentLines.push('None.');
+        }
       } catch {
-        contextParts.push('Recent files: could not load.');
+        recentLines.push('RECENT FILES:', 'Could not load.');
       }
-      const contextString = `The user has: ${contextParts.join(' ')}`;
+
+      const contextString = [
+        'PENDING WORK DATA (prioritize this data). Feel free to use emojis and other formatting to make the summary more engaging:',
+        '',
+        ...taskLines,
+        '',
+        ...approvalLines,
+        '',
+        ...recentLines
+      ].join('\n');
 
       const createRes = await callGraphBeta('/copilot/conversations', { method: 'POST', body: {} }) as { id?: string };
       const conversationId = createRes.id;
@@ -91,7 +130,9 @@ export const SummaryTab: React.FC<ISummaryTabProps> = (props) => {
       const chatRes = await callGraphBeta(`/copilot/conversations/${conversationId}/chat`, {
         method: 'POST',
         body: {
-          message: { text: 'Summarize my pending work today.' },
+          message: {
+            text: 'Summarize my pending work today. Prioritize the data in the additional context (tasks, approvals, recent files).'
+          },
           additionalContext: [{ text: contextString }],
           locationHint: { timeZone: 'UTC' }
         }
@@ -116,17 +157,55 @@ export const SummaryTab: React.FC<ISummaryTabProps> = (props) => {
 
   return (
     <div>
-      <p>Get a short summary of your pending work using Microsoft 365 Copilot.</p>
-      <PrimaryButton text="Summarize my pending work today" onClick={runSummarize} disabled={loading} />
-      {loading && <Spinner style={{ marginTop: 8 }} />}
+      {!summary && !loading && (
+        <div
+          style={{
+            padding: '24px',
+            border: '1px solid #edebe9',
+            borderRadius: '4px',
+            backgroundColor: '#faf9f8',
+            marginBottom: '16px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+            <Icon
+              iconName="Lightbulb"
+              styles={{ root: { fontSize: 36, flexShrink: 0, marginTop: '4px' } }}
+            />
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>
+                Summarize your pending work
+              </div>
+              <p style={{ margin: 0, color: '#605e5c', lineHeight: 1.5, marginBottom: '16px' }}>
+                Get a short summary of your tasks, approvals, and recent files using Microsoft 365 Copilot.
+              </p>
+              <PrimaryButton text="Summarize my pending work today" onClick={runSummarize} disabled={loading} />
+            </div>
+          </div>
+        </div>
+      )}
+      {loading && <Spinner label="Summarizing..." style={{ marginTop: 8 }} />}
       {error && (
         <MessageBar messageBarType={MessageBarType.warning} style={{ marginTop: 8 }}>
           {error} (User needs Microsoft 365 Copilot license and API permissions.)
         </MessageBar>
       )}
       {summary && (
-        <div style={{ marginTop: 16, padding: 12, backgroundColor: '#f3f2f1', borderRadius: 4, whiteSpace: 'pre-wrap' }}>
-          {summary}
+        <div
+          style={{
+            marginTop: 16,
+            padding: 16,
+            border: '1px solid #edebe9',
+            borderRadius: 4,
+            backgroundColor: '#fff',
+            fontSize: 14,
+            lineHeight: 1.6
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 12, color: '#323130' }}>Summary</div>
+          <div className="summary-content">
+            <ReactMarkdown>{summary}</ReactMarkdown>
+          </div>
         </div>
       )}
     </div>
