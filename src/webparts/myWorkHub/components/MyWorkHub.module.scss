@@ -10,6 +10,14 @@
   }
 }
 
+.webPartTitle {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  color: "[theme:bodyText, default: #323130]";
+  color: var(--bodyText);
+}
+
 .welcome {
   text-align: center;
 }

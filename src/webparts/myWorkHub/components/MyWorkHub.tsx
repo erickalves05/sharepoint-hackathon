@@ -12,6 +12,7 @@ import { SummaryTab } from './SummaryTab';
 export default class MyWorkHub extends React.Component<IMyWorkHubProps> {
   public render(): React.ReactElement<IMyWorkHubProps> {
     const {
+      title,
       hasTeamsContext,
       msGraphClient,
       callGraphBeta,
@@ -24,6 +25,9 @@ export default class MyWorkHub extends React.Component<IMyWorkHubProps> {
 
     return (
       <section className={`${styles.myWorkHub} ${hasTeamsContext ? styles.teams : ''}`}>
+        {title && (
+          <div className={styles.webPartTitle}>{title}</div>
+        )}
         {errorMessage && (
           <MessageBar
             messageBarType={MessageBarType.error}

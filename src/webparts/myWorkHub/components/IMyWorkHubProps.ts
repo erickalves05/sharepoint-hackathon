@@ -17,6 +17,7 @@ export type GraphBetaCall = (
 ) => Promise<{ value?: unknown[]; [key: string]: unknown }>;
 
 export interface IMyWorkHubProps {
+  title?: string;
   description: string;
   isDarkTheme: boolean;
   environmentMessage: string;

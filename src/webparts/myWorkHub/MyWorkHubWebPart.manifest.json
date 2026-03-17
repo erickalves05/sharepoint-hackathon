@@ -22,7 +22,8 @@
     "description": { "default": "MyWorkHub description" },
     "officeFabricIconFontName": "Page",
     "properties": {
-      "description": "MyWorkHub"
+      "description": "MyWorkHub",
+      "title": "My Work Hub"
     }
   }]
 }

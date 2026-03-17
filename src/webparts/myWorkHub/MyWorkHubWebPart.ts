@@ -17,6 +17,7 @@ import { createGraphBetaCallFromClient } from './services/GraphBetaService';
 
 export interface IMyWorkHubWebPartProps {
   description: string;
+  title: string;
 }
 
 import type { ServiceScope } from '@microsoft/sp-core-library';
@@ -38,6 +39,7 @@ export default class MyWorkHubWebPart extends BaseClientSideWebPart<IMyWorkHubWe
     const element: React.ReactElement<IMyWorkHubProps> = React.createElement(
       MyWorkHub,
       {
+        title: this.properties.title ?? 'My Work Hub',
         description: this.properties.description,
         isDarkTheme: this._isDarkTheme,
         environmentMessage: this._environmentMessage,
@@ -148,6 +150,10 @@ export default class MyWorkHubWebPart extends BaseClientSideWebPart<IMyWorkHubWe
             {
               groupName: strings.BasicGroupName,
               groupFields: [
+                PropertyPaneTextField('title', {
+                  label: 'Title',
+                  description: 'Web part title displayed at the top'
+                }),
                 PropertyPaneTextField('description', {
                   label: strings.DescriptionFieldLabel
                 })
